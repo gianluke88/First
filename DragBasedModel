@@ -1,0 +1,43 @@
+%% Function to evaluate time of arrival via the DBM 
+% This function evaluates the time of arrival of ICME at d AUs according 
+% to the Drag-Based Model equations with constant solar wind and 
+% drag parameter. Input variables are background solar wind speed
+% w (in km/s), initial height R0 (in solar radii), target distance 
+% d (in AUs) and drag parameter gamma (in 10^-7 km^-1).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function t = arrivaltime(R0,v0,w,d,gamma) 
+%% Input parameters, constants and unit conversions
+%constants
+AU = 149597871;         % 1 AU in Km
+% Input parameters
+gamma=gamma*10^(-7);    %drag coefficient, gamma units are Km^-1
+dv=v0-w;                % initial relative speed
+s=sign(dv);
+%conversions
+r0=R0*696000;           % initial distance R0 converted in Km
+                        % 1 Solar radius = 696000 Km                                           
+%% Time of arrival at 1AU computation
+% Estimation of time of arrival (to give a starting point to fzero)
+if w>100
+    extT = (AU-(r0/AU))/(w);  %extimated time of arrival in seconds
+else
+    extT = 2*(AU-(r0/AU))/(v0); 
+end
+% (Another evaluation of extT may be based on the characteristic 
+% deceleration length gamma^-1)
+%% Finding root of equation 
+fun = @(T) s*(1/gamma)*log(1+s*gamma*dv*T)+w*T+r0-d*AU;
+t = fzero(fun,extT)/3600;
+if  isnan(fzero(fun,extT))
+    for i=2:100
+        t = fzero(fun,i*extT); %change point to search root of equation
+        if isnan(t)
+            continue 
+        else
+        break
+        end
+    end
+end
+                        
+end                        
